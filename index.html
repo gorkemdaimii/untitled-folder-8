@@ -1,145 +1,544 @@
 <!doctype html>
 <html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Bizim Hikâyemiz</title>
 
 <style>
-:root{
-  --bg:#07070b;
-  --fg:#f4f4f7;
-  --pink: rgba(255,80,130,.95);
-}
-*{box-sizing:border-box}
-body{
-  margin:0;height:100vh;overflow:hidden;
-  background:radial-gradient(1200px 800px at 50% 60%, rgba(255,70,110,.10), transparent 55%),#07070b;
-  color:var(--fg);font-family:system-ui;
-}
-.center{height:100vh;display:grid;place-items:center}
-.card{text-align:center}
-.unlock{position:relative;width:520px;max-width:92vw;height:170px;border-radius:18px;border:1px solid rgba(255,255,255,.12)}
-.label{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:18px}
-.pill{padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.15)}
-.drag-heart{position:absolute;left:50%;top:74px;transform:translate(-50%,-50%);width:70px;height:70px;border-radius:50%;border:1px solid rgba(255,255,255,.2);display:grid;place-items:center;font-size:34px;cursor:grab}
-.progress{position:absolute;bottom:0;left:0;width:100%;height:4px;background:rgba(255,255,255,.1)}
-.bar{height:100%;width:0;background:linear-gradient(90deg,rgba(255,80,130,.2),rgba(255,80,130,.9))}
+  :root{
+    --bg:#07070b;
+    --fg:#f4f4f7;
+    --muted: rgba(244,244,247,.72);
+    --pink: rgba(255,80,130,.95);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; height:100svh; overflow:hidden;
+    background:
+      radial-gradient(1200px 800px at 50% 60%, rgba(255,70,110,0.10), transparent 55%),
+      var(--bg);
+    color:var(--fg);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    user-select:none;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-.modal{
-  position:fixed;inset:0;display:none;
-  background:radial-gradient(circle at 50% 40%, rgba(120,130,255,.18), transparent 60%),#0b0f2b;
-  justify-content:center;align-items:center;overflow:hidden
-}
-.modal.show{display:flex}
-.videoWrap{width:760px;max-width:96vw;position:relative}
-.videoWrap iframe{width:100%;height:430px;border-radius:18px;border:none;background:black}
+  .center{
+    height:100svh; display:grid; place-items:center;
+    padding:24px;
+  }
 
-.hearts{position:absolute;inset:0;pointer-events:none}
-.heart-fly{
-  position:absolute;bottom:-40px;color:rgba(255,120,160,.75);
-  animation:fly 8s linear infinite;
-}
-@keyframes fly{
-  0%{transform:translateY(0) scale(.6);opacity:0}
-  10%{opacity:1}
-  100%{transform:translateY(-120vh) scale(1.2);opacity:0}
-}
+  .card{
+    width:min(560px, 92vw);
+    text-align:center;
+    padding:26px 18px;
+  }
 
-.final{position:fixed;inset:0;display:none;justify-content:center;align-items:center;background:black}
-.final.show{display:flex}
-.box{background:rgba(255,255,255,.05);padding:26px;border-radius:18px;text-align:center}
-.btn{padding:12px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.04);color:white}
+  .title{
+    font-size: clamp(22px, 5vw, 30px);
+    margin:0 0 10px 0;
+    letter-spacing:.2px;
+  }
+  .desc{
+    margin:0 0 18px 0;
+    color: var(--muted);
+    line-height:1.5;
+    font-size: 15px;
+  }
+
+  /* Drag unlock area */
+  .unlock{
+    position:relative;
+    margin: 18px auto 0;
+    width:min(520px, 92vw);
+    height: 170px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.02);
+    box-shadow: 0 25px 70px rgba(0,0,0,.35);
+    overflow:hidden;
+  }
+
+  .glow{
+    position:absolute; inset:-40px;
+    background: radial-gradient(circle at 50% 30%, rgba(255,120,160,.18), transparent 60%);
+    opacity:.9; pointer-events:none;
+    filter: blur(2px);
+  }
+
+  .label{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 20px;
+    font-size: 16px;
+    color: rgba(244,244,247,.82);
+    pointer-events:none;
+  }
+
+  .pill{
+    padding:10px 14px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.18);
+    backdrop-filter: blur(6px);
+  }
+
+  .hint{
+    position:absolute;
+    left:0; right:0; bottom:12px;
+    font-size: 13px;
+    color: rgba(244,244,247,.62);
+    pointer-events:none;
+  }
+
+  .drag-heart{
+    position:absolute;
+    left: 50%;
+    top: 74px;
+    transform: translate(-50%,-50%);
+    width: 74px; height: 74px;
+    border-radius: 999px;
+    display:grid; place-items:center;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.03);
+    cursor: grab;
+    touch-action: none;
+    box-shadow: 0 18px 45px rgba(0,0,0,.35);
+    z-index: 2;
+  }
+  .drag-heart:active{ cursor: grabbing; }
+  .drag-heart span{
+    font-size: 34px;
+    filter: drop-shadow(0 16px 28px rgba(255,60,110,.45));
+    transform: scale(1);
+    transition: transform 120ms ease;
+  }
+  .dragging span{ transform: scale(1.1); }
+
+  /* Progress bar */
+  .progress{
+    position:absolute; left:0; bottom:0; height:4px; width:100%;
+    background: rgba(255,255,255,.06);
+  }
+  .bar{
+    height:100%; width:0%;
+    background: linear-gradient(90deg, rgba(255,80,130,.2), rgba(255,80,130,.9));
+    transition: width 120ms linear;
+  }
+
+  /* Video modal */
+  .modal{
+    position:fixed; inset:0;
+    display:none;
+    background:
+      radial-gradient(circle at 50% 40%, rgba(120,130,255,0.18), transparent 60%),
+      #0b0f2b;
+    backdrop-filter: blur(8px);
+    align-items:center; justify-content:center;
+    padding: 18px;
+    overflow:hidden;
+  }
+  .modal.show{ display:flex; }
+
+  .videoWrap{
+    width:min(760px, 96vw);
+    position:relative;
+    z-index: 2;
+  }
+
+  /* Vimeo iframe */
+  #vimeoPlayer{
+    width:100%;
+    height: 430px;
+    border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.55);
+    background:#000;
+    border: 0;
+  }
+
+  /* Flying hearts layer (only in modal) */
+  .hearts{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    display:none;
+    z-index: 1;
+  }
+  .modal.show .hearts{ display:block; }
+
+  .heart-fly{
+    position:absolute;
+    bottom:-40px;
+    font-size: 18px;
+    color: rgba(255,120,160,.75);
+    animation: fly 8s linear infinite;
+    filter: drop-shadow(0 0 12px rgba(255,80,130,.45));
+    opacity: 0;
+  }
+
+  @keyframes fly{
+    0%{
+      transform: translateY(0) translateX(0) scale(.6);
+      opacity:0;
+    }
+    10%{ opacity:1; }
+    100%{
+      transform: translateY(-120vh) translateX(40px) scale(1.2);
+      opacity:0;
+    }
+  }
+
+  /* Caption overlay */
+  .caption{
+    position:absolute;
+    left: 14px; right: 14px; bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.10);
+    color: rgba(244,244,247,.92);
+    font-size: 14px;
+    line-height: 1.35;
+    opacity:0;
+    transform: translateY(8px);
+    transition: opacity 240ms ease, transform 240ms ease;
+    z-index: 3;
+  }
+  .caption.show{
+    opacity:1;
+    transform: translateY(0);
+  }
+
+  /* Final screen */
+  .final{
+    position:fixed; inset:0;
+    display:none;
+    background:
+      radial-gradient(1200px 800px at 50% 40%, rgba(255,80,130,0.16), transparent 55%),
+      rgba(0,0,0,.86);
+    backdrop-filter: blur(8px);
+    align-items:center; justify-content:center;
+    padding: 24px;
+    text-align:center;
+  }
+  .final.show{ display:flex; }
+  .final .box{
+    width:min(560px, 92vw);
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.03);
+    padding: 22px 18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.55);
+  }
+  .q{
+    font-size: clamp(22px, 5vw, 30px);
+    margin: 0 0 10px 0;
+  }
+  .small{
+    margin:0 0 18px 0;
+    color: rgba(244,244,247,.75);
+    line-height:1.45;
+  }
+  .btns{
+    display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+  }
+  .btn{
+    padding: 12px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.04);
+    color: var(--fg);
+    font-weight: 600;
+    cursor:pointer;
+    transition: transform 120ms ease, background 180ms ease;
+  }
+  .btn:active{ transform: scale(.98); }
+  .btn.primary{
+    border-color: rgba(255,80,130,.55);
+    background: rgba(255,80,130,.18);
+  }
 </style>
 </head>
 
 <body>
+  <div class="center">
+    <div class="card">
+      <h1 class="title">Bir kilit var…</h1>
+      <p class="desc">
+        Kulaklığını tak. Sonra kalbi <b>Sen</b> yazısının üstüne sürükle.
+      </p>
 
-<div class="center">
-  <div class="card">
-    <h1>Bir kilit var…</h1>
-    <p>Kalbi “Sen”e sürükle.</p>
-    <div class="unlock" id="unlock">
-      <div class="label">
-        <div class="pill">Ben</div>
-        <div class="pill" id="target">Sen</div>
+      <div class="unlock" id="unlock">
+        <div class="glow"></div>
+
+        <div class="label">
+          <div class="pill me">Ben</div>
+          <div class="pill you" id="target" style="pointer-events:none;">Sen</div>
+        </div>
+
+        <div class="drag-heart" id="dragHeart" aria-label="Kalbi sürükle">
+          <span>❤</span>
+        </div>
+
+        <div class="hint" id="hint">Kalbi “Sen”e götür…</div>
+
+        <div class="progress"><div class="bar" id="bar"></div></div>
       </div>
-      <div class="drag-heart" id="heart">❤</div>
-      <div class="progress"><div class="bar" id="bar"></div></div>
     </div>
   </div>
-</div>
 
-<div class="modal" id="modal">
-  <div class="hearts" id="hearts"></div>
-  <div class="videoWrap">
-    <iframe id="vimeoPlayer"></iframe>
-  </div>
-</div>
+  <!-- Video Modal -->
+  <div class="modal" id="modal">
+    <div class="hearts" id="hearts"></div>
 
-<div class="final" id="final">
-  <div class="box">
-    <h2>Benimle vakit geçirmek ister misin?</h2>
-    <button class="btn">Evet 💗</button>
+    <div class="videoWrap">
+      <iframe
+        id="vimeoPlayer"
+        src=""
+        allow="autoplay; fullscreen; picture-in-picture"
+        allowfullscreen
+        title="Video">
+      </iframe>
+
+      <div class="caption" id="caption"></div>
+    </div>
   </div>
-</div>
+
+  <!-- Final -->
+  <div class="final" id="final">
+    <div class="box">
+      <h2 class="q">Benimle beraber vakit geçirmek ister misin?</h2>
+      <p class="small">Eğer “evet” dersen… ben gerçekten dünyanın en şanslı insanı olurum.</p>
+      <div class="btns">
+        <button class="btn primary" id="yes">Evet</button>
+        <button class="btn" id="no">Hayır</button>
+      </div>
+      <p class="small" id="after" style="margin-top:14px;"></p>
+    </div>
+  </div>
 
 <script src="https://player.vimeo.com/api/player.js"></script>
 <script>
-const VIMEO_ID = "1149825208"; // sadece sayı!
+  // ✅ Vimeo video ID (sadece sayı)
+  const VIMEO_ID = "1149825208"; // örn: 934829374
 
-const heart = document.getElementById("heart");
-const target = document.getElementById("target");
-const bar = document.getElementById("bar");
-const modal = document.getElementById("modal");
-const vimeo = document.getElementById("vimeoPlayer");
-const heartsBox = document.getElementById("hearts");
-const final = document.getElementById("final");
+  const dragHeart = document.getElementById('dragHeart');
+  const unlock = document.getElementById('unlock');
+  const target = document.getElementById('target');
+  const hint = document.getElementById('hint');
+  const bar = document.getElementById('bar');
 
-let dragging=false,startX,startY,originX,originY,completed=false,interval;
+  const modal = document.getElementById('modal');
+  const vimeo = document.getElementById('vimeoPlayer');
+  const caption = document.getElementById('caption');
+  const heartsBox = document.getElementById('hearts');
 
-heart.onpointerdown = e=>{
- dragging=true;
- const hb=heart.getBoundingClientRect();
- startX=e.clientX;startY=e.clientY;
- originX=hb.left;originY=hb.top;
-}
+  const final = document.getElementById('final');
+  const yes = document.getElementById('yes');
+  const no = document.getElementById('no');
+  const after = document.getElementById('after');
 
-heart.onpointermove = e=>{
- if(!dragging||completed) return;
- heart.style.left = originX+(e.clientX-startX)+"px";
- heart.style.top = originY+(e.clientY-startY)+"px";
- const hr=heart.getBoundingClientRect(),tr=target.getBoundingClientRect();
- const dist=Math.hypot(hr.left-tr.left,hr.top-tr.top);
- const p=Math.max(0,1-dist/200);
- bar.style.width=(p*100)+"%";
- if(p>0.9){ completed=true; openVideo(); }
-}
+  // Haptic
+  const vibe = (ms) => { if (navigator.vibrate) navigator.vibrate(ms); };
 
-document.onpointerup = ()=> dragging=false;
+  function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
 
-function spawnHeart(){
- const h=document.createElement("div");
- h.className="heart-fly"; h.innerHTML="❤";
- h.style.left=Math.random()*100+"vw";
- h.style.fontSize=(12+Math.random()*20)+"px";
- heartsBox.appendChild(h);
- setTimeout(()=>h.remove(),9000);
-}
+  // Kalp pozisyonu (unlock içinde)
+  function setHeartPos(x, y){
+    dragHeart.style.position = 'absolute';
+    dragHeart.style.left = x + 'px';
+    dragHeart.style.top  = y + 'px';
+    dragHeart.style.transform = 'translate(-50%,-50%)';
+  }
 
-function openVideo(){
- modal.classList.add("show");
- vimeo.src = `https://player.vimeo.com/video/${VIMEO_ID}?autoplay=1&title=0&byline=0&portrait=0`;
- interval=setInterval(spawnHeart,400);
+  // başlangıç: ortala
+  (function init(){
+    const ub = unlock.getBoundingClientRect();
+    setHeartPos(ub.width/2, 74);
+  })();
 
- const player=new Vimeo.Player(vimeo);
- player.on('ended',()=>{
-   clearInterval(interval);
-   heartsBox.innerHTML="";
-   modal.classList.remove("show");
-   final.classList.add("show");
- });
-}
+  function progressToTarget(){
+    const hr = dragHeart.getBoundingClientRect();
+    const tr = target.getBoundingClientRect();
+
+    const hx = hr.left + hr.width/2;
+    const hy = hr.top + hr.height/2;
+    const tx = tr.left + tr.width/2;
+    const ty = tr.top + tr.height/2;
+
+    const dist = Math.hypot(hx-tx, hy-ty);
+    const maxDist = 280;
+    const p = clamp(1 - (dist / maxDist), 0, 1);
+
+    bar.style.width = Math.round(p*100) + '%';
+
+    if (p > 0.92){
+      unlockComplete();
+    }
+  }
+
+  let completed=false;
+  let dragging=false;
+  let offsetX=0, offsetY=0;
+
+  function unlockComplete(){
+    if (completed) return;
+    completed=true;
+    bar.style.width = '100%';
+    hint.textContent = 'Tamam… şimdi başlıyor.';
+    vibe(25);
+
+    setTimeout(() => openVideo(), 650);
+  }
+
+  // ✅ Zıplama/Fırlama fix'li drag
+  dragHeart.addEventListener('pointerdown', (e) => {
+    if (completed) return;
+    dragging = true;
+    dragHeart.classList.add('dragging');
+    dragHeart.setPointerCapture?.(e.pointerId);
+
+    const ub = unlock.getBoundingClientRect();
+    const hr = dragHeart.getBoundingClientRect();
+
+    // kalp merkezinin unlock içindeki konumu
+    const heartCX = (hr.left + hr.width/2) - ub.left;
+    const heartCY = (hr.top  + hr.height/2) - ub.top;
+
+    // pointer’ın unlock içindeki konumu
+    const px = e.clientX - ub.left;
+    const py = e.clientY - ub.top;
+
+    // pointer ile kalp merkezi arasındaki farkı kilitle → zıplama biter
+    offsetX = heartCX - px;
+    offsetY = heartCY - py;
+
+    vibe(8);
+  });
+
+  dragHeart.addEventListener('pointermove', (e) => {
+    if (!dragging || completed) return;
+
+    const ub = unlock.getBoundingClientRect();
+    let x = (e.clientX - ub.left) + offsetX;
+    let y = (e.clientY - ub.top)  + offsetY;
+
+    // unlock alanı içinde kalsın
+    x = clamp(x, 44, ub.width - 44);
+    y = clamp(y, 44, ub.height - 44);
+
+    setHeartPos(x, y);
+    progressToTarget();
+  });
+
+  function endDrag(){
+    if (!dragging) return;
+    dragging=false;
+    dragHeart.classList.remove('dragging');
+    vibe(6);
+    if (!completed){
+      hint.textContent = 'Biraz daha…';
+    }
+  }
+  dragHeart.addEventListener('pointerup', endDrag);
+  dragHeart.addEventListener('pointercancel', endDrag);
+
+  // --- Uçuşan kalpler (sadece modal açıkken) ---
+  let heartInterval;
+
+  function spawnHeart(){
+    if (!modal.classList.contains('show')) return;
+
+    const h = document.createElement('div');
+    h.className = 'heart-fly';
+    h.textContent = '❤';
+    h.style.left = Math.random() * 100 + 'vw';
+    h.style.animationDuration = (6 + Math.random()*4) + 's';
+    h.style.fontSize = (14 + Math.random()*16) + 'px';
+    heartsBox.appendChild(h);
+
+    setTimeout(()=>h.remove(), 10000);
+  }
+
+  // --- Vimeo open + end detect ---
+  let player;
+
+  function openVideo(){
+    modal.classList.add('show');
+
+    // Vimeo iframe source
+    vimeo.src = `https://player.vimeo.com/video/${VIMEO_ID}?autoplay=1&title=0&byline=0&portrait=0`;
+
+    // kalpler başlasın
+    clearInterval(heartInterval);
+    heartInterval = setInterval(spawnHeart, 400);
+
+    // player oluştur (iframe src set edildikten sonra)
+    player = new Vimeo.Player(vimeo);
+
+    // caption reset
+    caption.textContent = '';
+    caption.classList.remove('show');
+    nextLineIndex = 0;
+
+    player.on('timeupdate', (data) => showCaption(data.seconds));
+    player.on('ended', () => {
+      clearInterval(heartInterval);
+      heartsBox.innerHTML = '';
+      modal.classList.remove('show');
+      final.classList.add('show');
+      vibe(30);
+    });
+  }
+
+  // --- Caption lines (kendi videona göre saniyeleri ayarla) ---
+  const lines = [
+    { time: 0.5,  text: 'Bunu izlerken… sadece şunu bil: ben seni seçtim.' },
+    { time: 4.5,  text: 'Dünyada milyon şey var, ama ben en çok seni seviyorum.' },
+    { time: 9.0,  text: 'Sadece videoyu hisset.' },
+    { time: 14.0, text: 'Gülüşün var ya… benim en sevdiğim yer.' },
+    { time: 20.0, text: 'İyi ki varsın. İyi ki “biz” olduk.' },
+  ];
+  let nextLineIndex = 0;
+
+  function showCaption(t){
+    if (nextLineIndex >= lines.length) return;
+    if (t >= lines[nextLineIndex].time){
+      caption.textContent = lines[nextLineIndex].text;
+      caption.classList.add('show');
+      setTimeout(() => caption.classList.remove('show'), 2800);
+      nextLineIndex++;
+      vibe(8);
+    }
+  }
+
+  // Final buttons
+  yes.addEventListener('click', () => {
+    after.textContent = 'Tamam… şimdi gel sarıl. (Şaka değil, gel.) 🥹❤️';
+    vibe(40);
+  });
+
+  // “Hayır” kaçsın 😭
+  no.addEventListener('mouseenter', dodgeNo);
+  no.addEventListener('click', dodgeNo);
+
+  function dodgeNo(){
+    const box = final.querySelector('.box').getBoundingClientRect();
+    const btn = no.getBoundingClientRect();
+
+    const maxX = box.width - btn.width - 24;
+    const maxY = box.height - btn.height - 24;
+
+    const x = Math.random() * maxX;
+    const y = Math.random() * maxY;
+
+    no.style.position = 'absolute';
+    no.style.left = (box.left + 12 + x) + 'px';
+    no.style.top  = (box.top  + 12 + y) + 'px';
+    vibe(10);
+  }
 </script>
 </body>
 </html>
