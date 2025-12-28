@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Bizim Hikâyemiz</title>
-
 <style>
   :root{
     --bg:#07070b;
@@ -106,6 +105,7 @@
     touch-action: none;
     box-shadow: 0 18px 45px rgba(0,0,0,.35);
     z-index: 2;
+    opacity: 1;
   }
   .drag-heart:active{ cursor: grabbing; }
   .drag-heart span{
@@ -179,15 +179,9 @@
   }
 
   @keyframes fly{
-    0%{
-      transform: translateY(0) translateX(0) scale(.6);
-      opacity:0;
-    }
+    0%{ transform: translateY(0) translateX(0) scale(.6); opacity:0; }
     10%{ opacity:1; }
-    100%{
-      transform: translateY(-120vh) translateX(40px) scale(1.2);
-      opacity:0;
-    }
+    100%{ transform: translateY(-120vh) translateX(40px) scale(1.2); opacity:0; }
   }
 
   /* Caption overlay */
@@ -275,7 +269,7 @@
 
         <div class="label">
           <div class="pill me">Ben</div>
-          <div class="pill you" id="target" style="pointer-events:none;">Sen</div>
+          <div class="pill you" id="target">Sen</div>
         </div>
 
         <div class="drag-heart" id="dragHeart" aria-label="Kalbi sürükle">
@@ -353,11 +347,43 @@
     dragHeart.style.transform = 'translate(-50%,-50%)';
   }
 
-  // başlangıç: ortala
-  (function init(){
+  // --- UI reset (kalp orada kalma / bfcache fix) ---
+  function resetUnlockUI(){
+    completed = false;
+    dragging = false;
+
+    bar.style.width = "0%";
+    hint.textContent = 'Kalbi “Sen”e götür…';
+
+    // kalbi geri getir
+    dragHeart.style.transition = "opacity 250ms ease";
+    dragHeart.style.opacity = "1";
+    dragHeart.style.pointerEvents = "auto";
+    dragHeart.style.display = "grid";
+
+    // kalbi merkeze al
     const ub = unlock.getBoundingClientRect();
     setHeartPos(ub.width/2, 74);
-  })();
+
+    // modal/final açık kalmasın (geri gelince saçmalamasın)
+    modal.classList.remove("show");
+    final.classList.remove("show");
+    caption.textContent = "";
+    caption.classList.remove("show");
+
+    // vimeo temizle
+    vimeo.src = "";
+    heartsBox.innerHTML = "";
+    if (heartInterval) clearInterval(heartInterval);
+  }
+
+  // normal load
+  window.addEventListener("load", resetUnlockUI);
+
+  // geri/ileri cache ile dönünce (asıl mesele)
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) resetUnlockUI();
+  });
 
   function progressToTarget(){
     const hr = dragHeart.getBoundingClientRect();
@@ -389,6 +415,12 @@
     bar.style.width = '100%';
     hint.textContent = 'Tamam… şimdi başlıyor.';
     vibe(25);
+
+    // ✅ kilit açılınca kalp kaybolsun (diğer sayfaya geçince "kalp kaldı" hissi bitiyor)
+    dragHeart.style.transition = "opacity 250ms ease";
+    dragHeart.style.opacity = "0";
+    dragHeart.style.pointerEvents = "none";
+    setTimeout(() => { dragHeart.style.display = "none"; }, 260);
 
     setTimeout(() => openVideo(), 650);
   }
@@ -475,7 +507,7 @@
     clearInterval(heartInterval);
     heartInterval = setInterval(spawnHeart, 400);
 
-    // player oluştur (iframe src set edildikten sonra)
+    // player oluştur
     player = new Vimeo.Player(vimeo);
 
     // caption reset
