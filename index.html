@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kalbi Uyandır</title>
+  <style>
+    :root{
+      --bg: #07070b;
+      --fg: #f4f4f7;
+      --muted: rgba(244,244,247,.72);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      height:100svh;
+      display:grid;
+      place-items:center;
+      background: radial-gradient(1200px 800px at 50% 60%, rgba(255,70,110,0.08), transparent 55%),
+                  var(--bg);
+      color:var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      overflow:hidden;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* “ışık açılıyor” hissi */
+    .veil{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background: radial-gradient(800px 600px at 50% 45%,
+        rgba(255,120,160,0.16),
+        rgba(0,0,0,0.86) 55%,
+        rgba(0,0,0,0.98) 100%);
+      opacity: 1;
+      transition: opacity 180ms linear;
+    }
+
+    .wrap{
+      width:min(520px, 92vw);
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:16px;
+      padding:28px 18px;
+    }
+
+    .title{
+      font-size: clamp(22px, 5vw, 30px);
+      letter-spacing: .2px;
+      margin: 0;
+    }
+    .hint{
+      margin:0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.35;
+    }
+
+    .heart-area{
+      position:relative;
+      width: 170px;
+      height: 170px;
+      display:grid;
+      place-items:center;
+      margin-top: 8px;
+    }
+
+    .ring{
+      position:absolute;
+      inset:-14px;
+      border-radius:999px;
+      border: 1px solid rgba(255,255,255,.10);
+      opacity: .9;
+      overflow:hidden;
+    }
+
+    /* progress halka efekti (conic-gradient) */
+    .ring::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      border-radius:inherit;
+      background: conic-gradient(
+        rgba(255,80,130,.95) calc(var(--p, 0) * 1%),
+        rgba(255,80,130,.08) 0
+      );
+      filter: blur(.2px);
+      mask: radial-gradient(circle at center, transparent 62%, #000 63%);
+      -webkit-mask: radial-gradient(circle at center, transparent 62%, #000 63%);
+      opacity: .95;
+      transition: opacity 180ms linear;
+    }
+
+    .heart-btn{
+      width: 132px;
+      height: 132px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.02);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      position:relative;
+      transform: translateZ(0);
+      transition: transform 120ms ease, background 180ms ease, box-shadow 180ms ease;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      touch-action: none; /* pointer events için */
+    }
+
+    .heart-btn:active{
+      transform: scale(.98);
+    }
+
+    .heart{
+      font-size: 56px;
+      filter: drop-shadow(0 14px 24px rgba(255,60,110,.28));
+      transform: scale(1);
+      transition: transform 140ms ease, filter 140ms ease;
+    }
+
+    .pressing .heart{
+      transform: scale(1.06);
+      filter: drop-shadow(0 18px 34px rgba(255,60,110,.45));
+    }
+
+    .status{
+      min-height: 22px;
+      font-size: 14px;
+      color: rgba(244,244,247,.78);
+      letter-spacing:.2px;
+    }
+
+    .done{
+      animation: pop 520ms ease both;
+    }
+    @keyframes pop{
+      0%{ transform: scale(1); }
+      55%{ transform: scale(1.08); }
+      100%{ transform: scale(1.02); }
+    }
+
+    .fade-out{
+      animation: fadeOut 700ms ease forwards;
+    }
+    @keyframes fadeOut{
+      to{ opacity:0; transform: translateY(-6px); }
+    }
+
+    /* küçük “parlama” */
+    .spark{
+      position:absolute;
+      inset:0;
+      border-radius:999px;
+      pointer-events:none;
+      background: radial-gradient(circle at 50% 40%,
+        rgba(255,140,180,.22),
+        transparent 55%);
+      opacity:0;
+      transition: opacity 200ms ease;
+    }
+    .pressing .spark{ opacity:1; }
+  </style>
+</head>
+<body>
+  <div class="veil" id="veil"></div>
+
+  <main class="wrap" id="scene">
+    <h1 class="title">Kalbi uyandır</h1>
+    <p class="hint">Kalbe <b>basılı tut</b>… Işık yavaş yavaş açılacak.</p>
+
+    <div class="heart-area" aria-label="Kalp etkileşimi">
+      <div class="ring" id="ring"></div>
+
+      <button class="heart-btn" id="heartBtn" aria-label="Kalbe basılı tut">
+        <div class="spark"></div>
+        <div class="heart" id="heart">❤</div>
+      </button>
+    </div>
+
+    <div class="status" id="status">Hazırsan başla.</div>
+  </main>
+
+  <script>
+    const heartBtn = document.getElementById('heartBtn');
+    const ring = document.getElementById('ring');
+    const veil = document.getElementById('veil');
+    const status = document.getElementById('status');
+    const scene = document.getElementById('scene');
+
+    // Basılı tutma süresi (ms) — romantik tempo için 1400–2000 iyi.
+    const HOLD_MS = 1600;
+
+    let pressing = false;
+    let startTime = 0;
+    let raf = null;
+    let lastVibe = 0;
+
+    function setProgress(p){ // 0..1
+      const pct = Math.max(0, Math.min(1, p));
+      ring.style.setProperty('--p', (pct * 100).toFixed(2));
+      // “ışık açılıyor” = veil opacity azalıyor
+      veil.style.opacity = String(1 - (pct * 0.78)); // 1 -> ~0.22
+      status.textContent = pct < 1 ? `Tut… ${(pct*100)|0}%` : '...';
+    }
+
+    function vibe(ms){
+      // iOS bazen ignore eder, Android çoğunlukla çalışır.
+      if (navigator.vibrate) navigator.vibrate(ms);
+    }
+
+    function tick(now){
+      if (!pressing) return;
+      const elapsed = now - startTime;
+      const p = elapsed / HOLD_MS;
+      setProgress(p);
+
+      // minik haptic “kalp atışı” hissi (çok sık değil)
+      if (elapsed - lastVibe > 260 && p < 1){
+        vibe(10);
+        lastVibe = elapsed;
+      }
+
+      if (p >= 1){
+        complete();
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    function beginPress(){
+      if (pressing) return;
+      pressing = true;
+      startTime = performance.now();
+      lastVibe = 0;
+      heartBtn.classList.add('pressing');
+      status.textContent = 'Tut…';
+      raf = requestAnimationFrame(tick);
+    }
+
+    function endPress(){
+      if (!pressing) return;
+      pressing = false;
+      heartBtn.classList.remove('pressing');
+      if (raf) cancelAnimationFrame(raf);
+      // bırakırsa yumuşakça geri sar
+      const current = parseFloat(ring.style.getPropertyValue('--p')) || 0;
+      const currentP = current / 100;
+      const backStart = performance.now();
+      const backDur = 420;
+
+      function back(now){
+        const t = Math.min(1, (now - backStart) / backDur);
+        const eased = 1 - Math.pow(1 - t, 3);
+        const p = currentP * (1 - eased);
+        setProgress(p);
+        if (t < 1 && !pressing) requestAnimationFrame(back);
+        else if (!pressing) status.textContent = 'Hazırsan tekrar dene.';
+      }
+      requestAnimationFrame(back);
+    }
+
+    function complete(){
+      pressing = false;
+      if (raf) cancelAnimationFrame(raf);
+
+      setProgress(1);
+      vibe(30);
+
+      heartBtn.classList.remove('pressing');
+      heartBtn.classList.add('done');
+      status.textContent = 'Şimdi seni asıl hikâyeye götürüyorum…';
+
+      // 1) Burada “bir sonraki sahne”ye geçiş yapacaksın:
+      //    - Tek sayfadaysan: section scroll
+      //    - Çok sayfaysa: window.location.href = "story.html"
+      //
+      // Şimdilik demo olarak 1.2sn sonra ekranı fade ediyor.
+      setTimeout(() => {
+        scene.classList.add('fade-out');
+        setTimeout(() => {
+          // ÖRNEK A: aynı sayfada bir sonraki bölüme kaydır
+          // document.getElementById('story').scrollIntoView({behavior:'smooth'});
+
+          // ÖRNEK B: ayrı sayfaya geç
+           window.location.href = "hikaye.html";
+
+          // Demo:
+          document.body.innerHTML = `
+            <div style="height:100svh;display:grid;place-items:center;background:#07070b;color:#f4f4f7;
+              font-family:system-ui;text-align:center;padding:24px">
+              <div>
+                <div style="font-size:28px;margin-bottom:10px">Devam ediyor…</div>
+                <div style="opacity:.75">Buradan sonra hikâye/video sahnesine geçeceğiz.</div>
+              </div>
+            </div>`;
+        }, 720);
+      }, 1200);
+    }
+
+    // Pointer events (mouse + touch + stylus)
+    heartBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      heartBtn.setPointerCapture?.(e.pointerId);
+      beginPress();
+    });
+
+    heartBtn.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      // eğer tamamlandıysa endPress çağırmaya gerek yok
+      const p = (parseFloat(ring.style.getPropertyValue('--p')) || 0) / 100;
+      if (p < 1) endPress();
+    });
+
+    heartBtn.addEventListener('pointercancel', endPress);
+    heartBtn.addEventListener('pointerleave', () => {
+      const p = (parseFloat(ring.style.getPropertyValue('--p')) || 0) / 100;
+      if (pressing && p < 1) endPress();
+    });
+
+    // init
+    setProgress(0);
+  </script>
+</body>
+</html>

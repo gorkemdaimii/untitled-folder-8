@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bizim Hikâyemiz</title>
+<style>
+:root{
+  --bg:#07070b;
+  --fg:#f4f4f7;
+  --muted: rgba(244,244,247,.72);
+  --pink: rgba(255,80,130,.95);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; height:100svh; overflow:hidden;
+  background:
+    radial-gradient(1200px 800px at 50% 60%, rgba(255,70,110,0.10), transparent 55%),
+    var(--bg);
+  color:var(--fg);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  user-select:none;
+}
+.center{height:100svh;display:grid;place-items:center;padding:24px;}
+.card{width:min(560px,92vw);text-align:center;padding:26px 18px;}
+.title{font-size:clamp(22px,5vw,30px);}
+.desc{color:var(--muted);line-height:1.5;}
+
+.unlock{position:relative;margin:18px auto;width:min(520px,92vw);height:170px;border-radius:18px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02);}
+.label{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;}
+.pill{padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.12);}
+.drag-heart{position:absolute;left:50%;top:74px;transform:translate(-50%,-50%);width:74px;height:74px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(255,255,255,.12);cursor:grab;}
+.drag-heart span{font-size:34px;}
+.progress{position:absolute;left:0;bottom:0;height:4px;width:100%;background:rgba(255,255,255,.06);}
+.bar{height:100%;width:0;background:linear-gradient(90deg,rgba(255,80,130,.2),rgba(255,80,130,.9));}
+
+.modal{
+  position:fixed; inset:0; display:none;
+  background: radial-gradient(circle at 50% 40%, rgba(120,130,255,.18), transparent 60%), #0b0f2b;
+  align-items:center; justify-content:center; padding:18px; overflow:hidden;
+}
+.modal.show{display:flex;}
+
+.hearts{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+.heart-fly{
+  position:absolute;bottom:-40px;color:rgba(255,120,160,.75);
+  animation:fly 8s linear infinite;
+}
+@keyframes fly{
+  0%{transform:translateY(0) scale(.6);opacity:0;}
+  10%{opacity:1;}
+  100%{transform:translateY(-120vh) scale(1.2);opacity:0;}
+}
+
+.videoWrap{width:min(760px,96vw);position:relative;}
+video{width:100%;border-radius:18px;background:#000;}
+
+.final{position:fixed;inset:0;display:none;background:#000;align-items:center;justify-content:center;}
+.final.show{display:flex;}
+.box{padding:24px;background:rgba(255,255,255,.05);border-radius:18px;}
+.btn{padding:12px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#fff;}
+</style>
+</head>
+
+<body>
+<div class="center">
+  <div class="card">
+    <h1 class="title">Bir kilit var…</h1>
+    <p class="desc">Kalbi “Sen”e sürükle…</p>
+    <div class="unlock" id="unlock">
+      <div class="label">
+        <div class="pill">Ben</div>
+        <div class="pill" id="target">Sen</div>
+      </div>
+      <div class="drag-heart" id="dragHeart"><span>❤</span></div>
+      <div class="progress"><div class="bar" id="bar"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="hearts"></div>
+  <div class="videoWrap">
+    <video id="video"><source src="video1.mp4" type="video/mp4"></video>
+  </div>
+</div>
+
+<div class="final" id="final">
+  <div class="box">
+    <h2>Benimle vakit geçirmek ister misin?</h2>
+    <button class="btn" id="yes">Evet</button>
+  </div>
+</div>
+
+<script>
+const heart=document.getElementById('dragHeart');
+const unlock=document.getElementById('unlock');
+const target=document.getElementById('target');
+const bar=document.getElementById('bar');
+const modal=document.getElementById('modal');
+const video=document.getElementById('video');
+const heartsBox=document.querySelector('.hearts');
+const final=document.getElementById('final');
+let dragging=false,startX,startY,originX,originY,completed=false,heartInterval;
+
+heart.addEventListener('pointerdown',e=>{
+ dragging=true;
+ const hb=heart.getBoundingClientRect(),ub=unlock.getBoundingClientRect();
+ originX=hb.left+hb.width/2-ub.left;
+ originY=hb.top+hb.height/2-ub.top;
+ startX=e.clientX;startY=e.clientY;
+});
+heart.addEventListener('pointermove',e=>{
+ if(!dragging||completed)return;
+ const ub=unlock.getBoundingClientRect();
+ const x=Math.min(ub.width-40,Math.max(40,originX+(e.clientX-startX)));
+ const y=Math.min(ub.height-40,Math.max(40,originY+(e.clientY-startY)));
+ heart.style.left=x+'px';heart.style.top=y+'px';
+ const hr=heart.getBoundingClientRect(),tr=target.getBoundingClientRect();
+ const d=Math.hypot(hr.left-tr.left,hr.top-tr.top);
+ const p=Math.max(0,1-d/200);bar.style.width=(p*100)+'%';
+ if(p>.9&&!completed){completed=true;openVideo();}
+});
+heart.addEventListener('pointerup',()=>dragging=false);
+
+function spawnHeart(){
+ const h=document.createElement('div');
+ h.className='heart-fly';h.textContent='❤';
+ h.style.left=Math.random()*100+'vw';
+ h.style.fontSize=(14+Math.random()*20)+'px';
+ heartsBox.appendChild(h);
+ setTimeout(()=>h.remove(),8000);
+}
+
+function openVideo(){
+ modal.classList.add('show');
+ video.play();
+ heartInterval=setInterval(spawnHeart,400);
+}
+
+video.onended=()=>{
+ clearInterval(heartInterval);
+ heartsBox.innerHTML='';
+ modal.classList.remove('show');
+ final.classList.add('show');
+}
+</script>
+</body>
+</html>
